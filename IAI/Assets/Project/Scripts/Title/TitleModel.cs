@@ -9,6 +9,9 @@ public class TitleModel : MonoBehaviour
 {
     public async Task TransitionToGameScene()
     {
-        await SceneManager.LoadSceneAsync(SceneNames.Main);
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            await SceneManager.LoadSceneAsync(SceneNames.Main);
+        }
     }
 }

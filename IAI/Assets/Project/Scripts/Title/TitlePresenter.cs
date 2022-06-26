@@ -14,6 +14,6 @@ public class TitlePresenter : MonoBehaviour
 
     void Start()
     {
-        view.StartButton.OnClickAsObservable().Subscribe(async _ => await model.TransitionToGameScene());
+        view.UpdateAsObservable().Subscribe(async _ => await model.TransitionToGameScene());
     }
 }
