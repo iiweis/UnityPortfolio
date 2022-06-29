@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class ResultDialogView : MonoBehaviour
 {
@@ -14,19 +15,13 @@ public class ResultDialogView : MonoBehaviour
     [SerializeField]
     private GameObject dialogContainer;
 
+    [SerializeField]
+    private TextMeshProUGUI resultTimeText;
+
     public Button BackButton => backButton;
     public Button TryAgainButton => tryAgainButton;
     public GameObject DialogContainer => dialogContainer;
+    public TextMeshProUGUI ResultTimeText => resultTimeText;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public void SetResultTime(System.TimeSpan value) => resultTimeText.text = value.ToString(@"ss\:fff");
 }

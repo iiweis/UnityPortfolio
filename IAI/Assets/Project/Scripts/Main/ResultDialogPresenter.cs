@@ -12,6 +12,9 @@ public class ResultDialogPresenter : MonoBehaviour
     [SerializeField]
     private ResultDialogModel model;
 
+    [SerializeField]
+    private MainModel mainModel;
+
     private void Start()
     {
         view.BackButton.OnClickAsObservable().Subscribe(async _ =>
@@ -27,6 +30,14 @@ public class ResultDialogPresenter : MonoBehaviour
         model.IsActiveDialog.Subscribe(value =>
         {
             view.DialogContainer.SetActive(value);
+        }).AddTo(this);
+
+        mainModel.IsStart.Subscribe(value =>
+        {
+            if (!value)
+            {
+                view.SetResultTime(mainModel.Elapsed.Value);
+            }
         }).AddTo(this);
     }
 }
