@@ -22,8 +22,5 @@ public class TitleModel : MonoBehaviour
             }).AddTo(this);
     }
 
-    public async Task TransitionToGameScene()
-    {
-        await SceneManager.LoadSceneAsync(SceneNames.Main);
-    }
+    public void TransitionToGameScene() => SceneManager.LoadScene(SceneNames.Main);
 }

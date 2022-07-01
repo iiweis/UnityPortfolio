@@ -18,7 +18,7 @@ public class Fader : MonoBehaviour
 
     public async Task FadeOut() => await FadeOut(fadeOutDurationSeconds);
 
-    public async Task FadeIn(float durationSeconds) => await fadeImage.DOFade(0f, durationSeconds).AsyncWaitForCompletion();
+    public async Task FadeIn(float durationSeconds) =>  await fadeImage.DOFade(0f, durationSeconds).SetLink(fadeImage.gameObject).AsyncWaitForCompletion();
 
-    public async Task FadeOut(float durationSeconds) => await fadeImage.DOFade(1f, durationSeconds).AsyncWaitForCompletion();
+    public async Task FadeOut(float durationSeconds) => await fadeImage.DOFade(1f, durationSeconds).SetLink(fadeImage.gameObject).AsyncWaitForCompletion();
 }

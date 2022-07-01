@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
+using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
+using Cysharp.Threading.Tasks;
 
 public class TitlePresenter : MonoBehaviour
 {
@@ -19,7 +22,7 @@ public class TitlePresenter : MonoBehaviour
             {
                 await view.PlayStartSound();
                 await view.Fader.FadeOut(1f);
-                await model.TransitionToGameScene();
+                model.TransitionToGameScene();
             }).AddTo(this);
     }
 }

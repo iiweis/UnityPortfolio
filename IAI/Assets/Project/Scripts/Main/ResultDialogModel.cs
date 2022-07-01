@@ -11,10 +11,7 @@ public class ResultDialogModel : MonoBehaviour
 {
     public BoolReactiveProperty IsActiveDialog { get; } = new BoolReactiveProperty();
 
-    public async Task TransitionToTitleScene()
-    {
-        await SceneManager.LoadSceneAsync(SceneNames.Title);
-    }
+    public void TransitionToTitleScene() => SceneManager.LoadScene(SceneNames.Title);
 
-    public async Task ReloadMainScene() => await SceneManager.LoadSceneAsync(SceneNames.Main);
+    public void ReloadMainScene() => SceneManager.LoadScene(SceneNames.Main);
 }
