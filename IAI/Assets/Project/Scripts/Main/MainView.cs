@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -26,6 +26,14 @@ public class MainView : MonoBehaviour
 
     [SerializeField]
     private Slider remainingTimeSlider;
+
+    [SerializeField]
+    private Fader fader;
+
+    private async void Start()
+    {
+        await fader.FadeIn();
+    }
 
     public void Slash()
     {
@@ -57,17 +65,5 @@ public class MainView : MonoBehaviour
     {
         remainingTimeSlider.minValue = minValue;
         remainingTimeSlider.maxValue = maxValue;
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

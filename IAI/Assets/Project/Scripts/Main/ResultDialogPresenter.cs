@@ -19,11 +19,13 @@ public class ResultDialogPresenter : MonoBehaviour
     {
         view.BackButton.OnClickAsObservable().Subscribe(async _ =>
         {
+            await view.Fader.FadeOut();
             await model.TransitionToTitleScene();
         }).AddTo(this);
 
         view.TryAgainButton.OnClickAsObservable().Subscribe(async _ =>
         {
+            await view.Fader.FadeOut();
             await model.ReloadMainScene();
         }).AddTo(this);
 

@@ -18,10 +18,14 @@ public class ResultDialogView : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI resultTimeText;
 
+    [SerializeField]
+    private Fader fader;
+
     public Button BackButton => backButton;
     public Button TryAgainButton => tryAgainButton;
     public GameObject DialogContainer => dialogContainer;
     public TextMeshProUGUI ResultTimeText => resultTimeText;
+    public Fader Fader => fader;
 
     public void SetResultTime(System.TimeSpan value) => resultTimeText.text = value.ToString(@"ss\:fff");
 }

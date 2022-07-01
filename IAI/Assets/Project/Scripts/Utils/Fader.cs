@@ -9,11 +9,14 @@ public class Fader : MonoBehaviour
     private Image fadeImage;
 
     [SerializeField]
-    private float durationSeconds;
+    private float fadeInDurationSeconds;
 
-    public async Task FadeIn() => await fadeImage.DOFade(0f, durationSeconds).AsyncWaitForCompletion();
+    [SerializeField]
+    private float fadeOutDurationSeconds;
 
-    public async Task FadeOut() => await fadeImage.DOFade(1f, durationSeconds).AsyncWaitForCompletion();
+    public async Task FadeIn() => await FadeIn(fadeInDurationSeconds);
+
+    public async Task FadeOut() => await FadeOut(fadeOutDurationSeconds);
 
     public async Task FadeIn(float durationSeconds) => await fadeImage.DOFade(0f, durationSeconds).AsyncWaitForCompletion();
 
