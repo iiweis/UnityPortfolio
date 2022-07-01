@@ -1,6 +1,8 @@
+ï»¿using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,9 +12,26 @@ public class TitleView : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI pressEnterText;
 
-    private void Start()
+    [SerializeField]
+    private AudioSource audioSource;
+
+    [SerializeField]
+    private Fader fader;
+
+    public Fader Fader => fader;
+
+    private async void Start()
     {
-        // ƒeƒLƒXƒg“_–Å
+        // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
+        await fader.FadeIn();
+
+        // ãƒ†ã‚­ã‚¹ãƒˆç‚¹æ»…
         pressEnterText.DOFade(0.0f, 1.5f).SetEase(Ease.Flash).SetLoops(-1, LoopType.Yoyo);
+    }
+
+    public async Task PlayStartSound()
+    {
+        audioSource.PlayOneShot(audioSource.clip);
+        await UniTask.WaitWhile(() => audioSource.isPlaying);
     }
 }

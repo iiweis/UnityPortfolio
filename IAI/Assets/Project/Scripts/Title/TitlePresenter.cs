@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
@@ -14,6 +14,12 @@ public class TitlePresenter : MonoBehaviour
 
     void Start()
     {
-        view.UpdateAsObservable().Subscribe(async _ => await model.TransitionToGameScene());
+        model.Press.Where(value => value).
+            Subscribe(async _ =>
+            {
+                await view.PlayStartSound();
+                await view.Fader.FadeOut(1f);
+                await model.TransitionToGameScene();
+            }).AddTo(this);
     }
 }
