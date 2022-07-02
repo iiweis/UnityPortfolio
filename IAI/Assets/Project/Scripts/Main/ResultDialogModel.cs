@@ -13,5 +13,9 @@ public class ResultDialogModel : MonoBehaviour
 
     public void TransitionToTitleScene() => SceneManager.LoadScene(SceneNames.Title);
 
-    public void ReloadMainScene() => SceneManager.LoadScene(SceneNames.Main);
+    public void PlayAgain()
+    {
+        GameManager.Instance.Resut();
+        SceneManager.LoadScene(SceneNames.Main);
+    }
 }

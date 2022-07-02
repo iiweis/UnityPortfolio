@@ -30,8 +30,17 @@ public class MainView : MonoBehaviour
     [SerializeField]
     private Fader fader;
 
+    public Fader Fader => fader;
+
+    [SerializeField]
+    private GameObject waraNormal;
+
+    [SerializeField]
+    private GameObject waraCutted;
+
     private async void Start()
     {
+        SetLevel(GameManager.Instance.Level);
         await fader.FadeIn();
     }
 
@@ -39,7 +48,9 @@ public class MainView : MonoBehaviour
     {
         Debug.DrawLine(target.transform.position, cut.transform.position);
 
-        (GameObject copyNormalside, _) = MeshCutter.Cut(target, target.transform.position, cut.transform.position);
+        waraNormal.SetActive(false);
+        waraCutted.SetActive(true);
+        //(GameObject copyNormalside, _) = MeshCutter.Cut(target, target.transform.position, cut.transform.position);
         
         //copyNormalside.transform.position = target.transform.position;
     }

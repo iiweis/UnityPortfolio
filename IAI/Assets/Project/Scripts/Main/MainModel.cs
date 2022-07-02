@@ -1,18 +1,19 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
 using UnityRandom = UnityEngine.Random;
+using Cysharp.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 public class MainModel : MonoBehaviour
 {
     private readonly BoolReactiveProperty isStart = new BoolReactiveProperty();
-    private readonly IntReactiveProperty level = new IntReactiveProperty(1);
     private readonly ReactiveProperty<TimeSpan> elapsed = new ReactiveProperty<TimeSpan>();
     private readonly ReactiveProperty<TimeSpan> remainingTime = new ReactiveProperty<TimeSpan>();
-    private readonly ReactiveProperty<bool?> result = new ReactiveProperty<bool?>();
+    private readonly ReactiveProperty<bool?> result = new ReactiveProperty<bool?>(null);
     private readonly BoolReactiveProperty isSlash = new BoolReactiveProperty();
     private readonly ReactiveProperty<TimeSpan> timeLimit = new ReactiveProperty<TimeSpan>();
 
@@ -20,24 +21,22 @@ public class MainModel : MonoBehaviour
     private Dictionary<int, TimeSpan> timeLimitPerLevel;
 
     /// <summary>
-    /// ƒQ[ƒ€‚ªŠJn‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©
+    /// ã‚²ãƒ¼ãƒ ãŒé–‹å§‹ã—ã¦ã„ã‚‹ã‹ã©ã†ã‹
     /// </summary>
     public IReactiveProperty<bool> IsStart => isStart;
 
-    public IReactiveProperty<int> Level => level;
-
     /// <summary>
-    /// ƒQ[ƒ€ŠJn‚©‚ç‚ÌŒo‰ßŠÔ
+    /// ã‚²ãƒ¼ãƒ é–‹å§‹ã‹ã‚‰ã®çµŒéæ™‚é–“
     /// </summary>
     public IReadOnlyReactiveProperty<TimeSpan> Elapsed => elapsed;
 
     /// <summary>
-    /// c‚èŠÔ
+    /// æ®‹ã‚Šæ™‚é–“
     /// </summary>
     public IReactiveProperty<TimeSpan> RemainingTime => remainingTime;
 
     /// <summary>
-    /// Œ‹‰Ê
+    /// çµæœ
     /// </summary>
     public IReactiveProperty<bool?> Result => result;
 
@@ -47,13 +46,13 @@ public class MainModel : MonoBehaviour
     public IReadOnlyReactiveProperty<bool> IsSlash => isSlash;
 
     /// <summary>
-    /// §ŒÀŠÔ
+    /// åˆ¶é™æ™‚é–“
     /// </summary>
     public IReadOnlyReactiveProperty<TimeSpan> TimeLimit => timeLimit;
 
     private void Start()
     {
-        // ƒŒƒxƒ‹‚²‚Æ‚Ì§ŒÀŠÔ
+        // ãƒ¬ãƒ™ãƒ«ã”ã¨ã®åˆ¶é™æ™‚é–“
         timeLimitPerLevel = new Dictionary<int, TimeSpan>()
         {
             { 1, TimeSpan.FromSeconds(3) },
@@ -68,30 +67,33 @@ public class MainModel : MonoBehaviour
             { 10, TimeSpan.FromSeconds(0.15) },
         };
 
-        // 5`15•b‘Ò‹@‚µ‚Ä‚©‚çƒQ[ƒ€ŠJn
+        // 5ï½15ç§’å¾…æ©Ÿã—ã¦ã‹ã‚‰ã‚²ãƒ¼ãƒ é–‹å§‹
         TimeSpan dueTime = TimeSpan.FromSeconds(5 + UnityRandom.Range(0, 10 + 1));
         Observable.Timer(dueTime).SubscribeWithState(this, (_, myself) =>
         {
-            // ƒQ[ƒ€ŠJn‚ğ’Ê’m
-            myself.isStart.Value = true;
+            if (!result.Value.HasValue)
+            {
+                // ã‚²ãƒ¼ãƒ é–‹å§‹ã‚’é€šçŸ¥
+                myself.isStart.Value = true;
+            }
         }, myself =>
         {
             if (myself.isStart.Value)
             {
-                // ƒQ[ƒ€ŠJn
+                // ã‚²ãƒ¼ãƒ é–‹å§‹
 
-                // §ŒÀŠÔİ’è
-                TimeSpan timeLimit = myself.timeLimitPerLevel[myself.level.Value];
+                // åˆ¶é™æ™‚é–“è¨­å®š
+                TimeSpan timeLimit = myself.timeLimitPerLevel[GameManager.Instance.Level];
                 myself.timeLimit.Value = timeLimit;
                 myself.remainingTime.Value = timeLimit;
 
-                // ŠÔŒv‘ª—p‚ÌObservable‚ğ”­s
+                // æ™‚é–“è¨ˆæ¸¬ç”¨ã®Observableã‚’ç™ºè¡Œ
                 myself.intervalOvervable = Observable.TimeInterval(Observable.EveryUpdate()).SubscribeWithState(this, (value, myself) =>
                 {
-                    // Œo‰ßŠÔ‚Í‰ÁZ
+                    // çµŒéæ™‚é–“ã¯åŠ ç®—
                     myself.elapsed.Value += value.Interval;
 
-                    // c‚èŠÔ‚ÍŒ¸Z
+                    // æ®‹ã‚Šæ™‚é–“ã¯æ¸›ç®—
                     myself.remainingTime.Value -= value.Interval;
                 }).AddTo(this);
             }
@@ -101,7 +103,7 @@ public class MainModel : MonoBehaviour
         {
             if (!value)
             {
-                // ƒQ[ƒ€I—¹Œã‚ÍŒo‰ßŠÔŒv‘ª—p‚ÌObservable‚Í•K—v‚È‚¢‚Ì‚Å”jŠü
+                // ã‚²ãƒ¼ãƒ çµ‚äº†å¾Œã¯çµŒéæ™‚é–“è¨ˆæ¸¬ç”¨ã®Observableã¯å¿…è¦ãªã„ã®ã§ç ´æ£„
                 myself.intervalOvervable?.Dispose();
             }
         }).AddTo(this);
@@ -111,8 +113,16 @@ public class MainModel : MonoBehaviour
         {
             if (value.Ticks < 0)
             {
-                // §ŒÀŠÔŒo‰ß‚ÅƒQ[ƒ€¸”s
+                // åˆ¶é™æ™‚é–“çµŒéã§ã‚²ãƒ¼ãƒ å¤±æ•—
                 myself.isStart.Value = false;
+            }
+        }).AddTo(this);
+
+        result.SubscribeWithState(this, async (value, myself) =>
+        {
+            if (value.GetValueOrDefault())
+            {
+                GameManager.Instance.Level += 1;
             }
         }).AddTo(this);
     }
@@ -123,7 +133,7 @@ public class MainModel : MonoBehaviour
         {
             if (!isStart.Value || intervalOvervable is null)
             {
-                // ŠÔŒv‘ª‚ªn‚Ü‚Á‚Ä‚¢‚È‚¢‚Æ‚«‚Éƒ{ƒ^ƒ“‚ğ‰Ÿ‚µ‚Ä‚¢‚½‚ç¸”s
+                // æ™‚é–“è¨ˆæ¸¬ãŒå§‹ã¾ã£ã¦ã„ãªã„ã¨ãã«ãƒœã‚¿ãƒ³ã‚’æŠ¼ã—ã¦ã„ãŸã‚‰å¤±æ•—
                 result.Value = false;
                 return;
             }
@@ -132,4 +142,6 @@ public class MainModel : MonoBehaviour
             isSlash.Value = false;
         }
     }
+
+    public void ReloadMainScene() => SceneManager.LoadScene(SceneNames.Main);
 }

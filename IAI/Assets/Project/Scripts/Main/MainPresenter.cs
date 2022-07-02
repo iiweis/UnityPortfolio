@@ -1,8 +1,9 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
+using Cysharp.Threading.Tasks;
 
 public class MainPresenter : MonoBehaviour
 {
@@ -18,17 +19,20 @@ public class MainPresenter : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        model.Result.Subscribe(value =>
+        model.Result.Subscribe(async value =>
         {
             if (value is bool result)
             {
                 if (result)
                 {
-                    // ƒQ[ƒ€¬Œ÷
+                    // ã‚²ãƒ¼ãƒ æˆåŠŸ
+                    await UniTask.Delay(2000);
+                    await view.Fader.FadeOut(1f);
+                    model.ReloadMainScene();
                 }
                 else
                 {
-                    // ƒQ[ƒ€Ž¸”s
+                    // ã‚²ãƒ¼ãƒ å¤±æ•—
                     dialogModel.IsActiveDialog.Value = true;
                 }
             }
@@ -39,13 +43,20 @@ public class MainPresenter : MonoBehaviour
         {
             if (value)
             {
-                view.Slash();
+                model.Result.Value = (model.TimeLimit.Value - model.Elapsed.Value).Ticks >= 0;
                 model.IsStart.Value = false;
-                dialogModel.IsActiveDialog.Value = true;
+                view.Slash();
+                //dialogModel.IsActiveDialog.Value = true;
             }
         }).AddTo(this);
 
-        model.IsStart.Subscribe(value => view.SetStartActive(value)).AddTo(this);
+        model.IsStart.Subscribe(value =>
+        {
+            if (!model.Result.Value.HasValue)
+            {
+                view.SetStartActive(value);
+            }
+        }).AddTo(this);
         model.Elapsed.Subscribe(value => view.SetElapsedText(value)).AddTo(this);
 
         model.TimeLimit.Subscribe(value =>

@@ -26,7 +26,7 @@ public class ResultDialogPresenter : MonoBehaviour
         view.TryAgainButton.OnClickAsObservable().Subscribe(async _ =>
         {
             await view.Fader.FadeOut(1f);
-            model.ReloadMainScene();
+            model.PlayAgain();
         }).AddTo(this);
 
         model.IsActiveDialog.Subscribe(value =>
