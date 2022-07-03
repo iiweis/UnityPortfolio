@@ -88,7 +88,7 @@ internal class GameManager
             Util.ThrowArgumentOutOfRangeException(nameof(level), $"レベルは{MinLevel}～{MaxLevel}の範囲で指定してください。");
         }
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
         var oneSecond = TimeSpan.FromSeconds(1);
         return timeLimitPerLevel[level] + oneSecond;
 #else
