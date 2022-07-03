@@ -1,11 +1,11 @@
 ﻿using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using TMPro;
+using UniRx;
+using UniRx.Triggers;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TitleView : MonoBehaviour
 {
@@ -13,15 +13,29 @@ public class TitleView : MonoBehaviour
     private TextMeshProUGUI pressEnterText;
 
     [SerializeField]
-    private AudioSource audioSource;
+    private AudioManager audioManager;
 
     [SerializeField]
     private Fader fader;
 
+    /// <summary>
+    /// フェーダーを取得する。
+    /// </summary>
     public Fader Fader => fader;
+
+    /// <summary>
+    /// Enterキー押下時の動作を取得または設定する。
+    /// </summary>
+    public Action PressEnterAction { get; set; }
 
     private async void Start()
     {
+        // Enterキーの押下を監視
+        this.UpdateAsObservable().
+            Where(_ => Input.GetKeyDown(KeyCode.Return)).
+            Subscribe(_ => OnPressEnter()).
+            AddTo(this);
+
         // フェードイン
         await fader.FadeIn();
 
@@ -29,9 +43,12 @@ public class TitleView : MonoBehaviour
         pressEnterText.DOFade(0.0f, 1.5f).SetEase(Ease.Flash).SetLoops(-1, LoopType.Yoyo);
     }
 
-    public async Task PlayStartSound()
-    {
-        audioSource.PlayOneShot(audioSource.clip);
-        await UniTask.WaitWhile(() => audioSource.isPlaying);
-    }
+    /// <summary>
+    /// スタート時のSEを鳴らす。
+    /// </summary>
+    /// <returns></returns>
+    public async Task PlayStartSoundAsync() => await audioManager.PlayOneShotAsync("Enter");
+
+
+    private void OnPressEnter() => PressEnterAction?.Invoke();
 }

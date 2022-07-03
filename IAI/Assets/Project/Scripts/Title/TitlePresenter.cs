@@ -1,11 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UniRx;
-using UniRx.Triggers;
-using System.Threading.Tasks;
-using UnityEngine.SceneManagement;
-using Cysharp.Threading.Tasks;
+﻿using UnityEngine;
 
 public class TitlePresenter : MonoBehaviour
 {
@@ -15,14 +8,14 @@ public class TitlePresenter : MonoBehaviour
     [SerializeField]
     private TitleView view;
 
-    void Start()
+    private void Start()
     {
-        model.Press.Where(value => value).
-            Subscribe(async _ =>
-            {
-                await view.PlayStartSound();
-                await view.Fader.FadeOut(1f);
-                model.TransitionToGameScene();
-            }).AddTo(this);
+        view.PressEnterAction += async () =>
+        {
+            // フェードアウトしつつゲームシーンに遷移
+            await view.PlayStartSoundAsync();
+            await view.Fader.FadeOut(1f);
+            model.TransitionToGameScene();
+        };
     }
 }
