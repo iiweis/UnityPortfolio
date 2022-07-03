@@ -54,9 +54,9 @@ public class MainView : MonoBehaviour
         SetElapsedTextActive(false);
         SetRemainingTimeSliderActive(false);
 
-        // Spaceキーの押下を監視
+        // Spaceキー押下または左クリックを監視
         this.UpdateAsObservable().
-            Where(_ => Input.GetKeyDown(KeyCode.Space)).
+            Where(_ => Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)).
             SubscribeWithState(this, (_, myself) => myself.OnPressSpace()).
             AddTo(this);
 

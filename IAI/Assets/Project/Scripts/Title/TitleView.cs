@@ -24,15 +24,15 @@ public class TitleView : MonoBehaviour
     public Fader Fader => fader;
 
     /// <summary>
-    /// Enterキー押下時の動作を取得または設定する。
+    /// スタート時の動作を取得または設定する。
     /// </summary>
-    public Action PressEnterAction { get; set; }
+    public Action StartAction { get; set; }
 
     private async void Start()
     {
-        // Enterキーの押下を監視
+        // Enterキー押下または左クリックを監視
         this.UpdateAsObservable().
-            Where(_ => Input.GetKeyDown(KeyCode.Return)).
+            Where(_ => Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0)).
             First().
             SubscribeWithState(this, (_, myself) => myself.OnPressEnter()).
             AddTo(this);
@@ -51,5 +51,5 @@ public class TitleView : MonoBehaviour
     public async Task PlayStartSoundAsync() => await audioManager.PlayOneShotAsync("Enter");
 
 
-    private void OnPressEnter() => PressEnterAction?.Invoke();
+    private void OnPressEnter() => StartAction?.Invoke();
 }

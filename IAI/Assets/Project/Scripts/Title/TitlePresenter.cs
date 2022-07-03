@@ -10,7 +10,7 @@ public class TitlePresenter : MonoBehaviour
 
     private void Start()
     {
-        view.PressEnterAction += async () =>
+        view.StartAction += async () =>
         {
             // フェードアウトしつつゲームシーンに遷移
             await view.PlayStartSoundAsync();
