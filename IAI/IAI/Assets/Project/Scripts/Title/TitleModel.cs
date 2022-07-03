@@ -1,14 +1,15 @@
-using Cysharp.Threading.Tasks;
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class TitleModel : MonoBehaviour
 {
-    public async Task TransitionToGameScene()
+    /// <summary>
+    /// ゲームシーンに遷移する。
+    /// </summary>
+    public void TransitionToGameScene()
     {
-        await SceneManager.LoadSceneAsync(SceneNames.Main);
+        // 前回の記録が残っている可能性があるのでリセットしてから遷移する
+        GameManager.Instance.Reset();
+        SceneManager.LoadScene(SceneNames.Main);
     }
 }

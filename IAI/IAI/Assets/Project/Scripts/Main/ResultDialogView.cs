@@ -1,32 +1,106 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using System;
+using UniRx;
 
 public class ResultDialogView : MonoBehaviour
 {
     [SerializeField]
-    private Button backButton;
+    private Button playAgainButton;
 
     [SerializeField]
-    private Button tryAgainButton;
+    private Button backButton;
 
     [SerializeField]
     private GameObject dialogContainer;
 
-    public Button BackButton => backButton;
-    public Button TryAgainButton => tryAgainButton;
-    public GameObject DialogContainer => dialogContainer;
+    [SerializeField]
+    private TextMeshProUGUI clearLevelText;
 
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField]
+    private TextMeshProUGUI bestTimeText;
+
+
+    /// <summary>
+    /// Play againボタンを押したときの動作を取得または設定する。
+    /// </summary>
+    public Action ClickPlayAgainButtonAction { get; set; }
+
+    /// <summary>
+    /// Back to titleボタンを押したときの動作を取得または設定する。
+    /// </summary>
+    public Action ClickBackButtonAction { get; set; }
+
+    private void Start()
     {
-        
+        UpdateResult();
+        HideDialog();
+
+        playAgainButton.OnClickAsObservable().
+            First().
+            SubscribeWithState(this, (_, myself) => myself.ClickPlayAgainButtonAction?.Invoke()).
+            AddTo(this);
+
+        backButton.OnClickAsObservable().
+            First().
+            SubscribeWithState(this, (_, myself) => myself.ClickBackButtonAction?.Invoke()).
+            AddTo(this);
     }
 
-    // Update is called once per frame
-    void Update()
+    /// <summary>
+    /// リザルトダイアログを表示する。
+    /// </summary>
+    public void ShowDialog()
     {
-        
+        // 結果表示
+        UpdateResult();
+        dialogContainer.SetActive(true);
+    }
+
+    private void UpdateResult()
+    {
+        GameManager gameManager = GameManager.Instance;
+        SetClearLevel(gameManager.ClearLevel);
+        SetBestTime(gameManager.BestTime);
+    }
+
+    /// <summary>
+    /// リザルトダイアログを非表示にする。
+    /// </summary>
+    public void HideDialog() => dialogContainer.SetActive(false);
+
+    /// <summary>
+    /// クリアレベルを設定する。
+    /// </summary>
+    /// <param name="value"></param>
+    private void SetClearLevel(int? value)
+    {
+        if (value is int clearLevel)
+        {
+            clearLevelText.text = $"Clear Level : {clearLevel}";
+        }
+        else
+        {
+            clearLevelText.text = $"Clear Level : --";
+        }
+    }
+
+    /// <summary>
+    /// ベストタイムを設定する。
+    /// </summary>
+    /// <param name="value"></param>
+    private void SetBestTime(System.TimeSpan? value)
+    {
+        if (value is System.TimeSpan bestTime)
+        {
+            bestTimeText.text = $"Best Time : {bestTime:s\\.fff}s";
+        }
+        else
+        {
+            bestTimeText.text = "Best Time : -.---s";
+        }
     }
 }
