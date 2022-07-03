@@ -36,6 +36,7 @@ public class ResultDialogView : MonoBehaviour
 
     private void Start()
     {
+        UpdateResult();
         HideDialog();
 
         playAgainButton.OnClickAsObservable().
@@ -55,11 +56,15 @@ public class ResultDialogView : MonoBehaviour
     public void ShowDialog()
     {
         // 結果表示
-        GameManager gameManager = GameManager.Instance;
-        SetClearLevel(gameManager.Level == GameManager.MinLevel ? null : gameManager.Level);
-        SetBestTime(gameManager.BestTime);
+        UpdateResult();
+        dialogContainer.SetActive(true);
+    }
 
-        gameObject.SetActive(true);
+    private void UpdateResult()
+    {
+        GameManager gameManager = GameManager.Instance;
+        SetClearLevel(gameManager.ClearLevel);
+        SetBestTime(gameManager.BestTime);
     }
 
     /// <summary>

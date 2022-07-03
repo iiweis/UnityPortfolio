@@ -53,6 +53,7 @@ public class MainModel : MonoBehaviour
             if (resultState.Value != global::ResultState.None)
             {
                 // 既にゲームが終わっている場合は何もしない
+                return;
             }
 
             // ゲーム開始を通知

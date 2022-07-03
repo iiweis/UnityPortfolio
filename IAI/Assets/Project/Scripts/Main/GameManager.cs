@@ -34,13 +34,25 @@ internal class GameManager
 
     public static GameManager Instance { get; }
 
+    /// <summary>
+    /// 現在のレベルを取得する。
+    /// </summary>
     public int Level { get; private set; }
 
+    /// <summary>
+    /// クリアレベルを取得する。
+    /// </summary>
+    public int? ClearLevel { get; private set; }
+
+    /// <summary>
+    /// ベストタイムを取得する。
+    /// </summary>
     public TimeSpan? BestTime { get; private set; }
 
     public void Reset()
     {
         Level = 1;
+        ClearLevel = null;
         BestTime = null;
     }
 
@@ -59,6 +71,7 @@ internal class GameManager
         }
 
         // レベルアップ
+        ClearLevel = currentLevel;
         Level = nextLevel;
         return currentLevel;
     }
