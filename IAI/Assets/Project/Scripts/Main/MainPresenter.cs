@@ -1,8 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UniRx;
-using UniRx.Triggers;
 using Cysharp.Threading.Tasks;
 
 public class MainPresenter : MonoBehaviour
@@ -11,69 +8,89 @@ public class MainPresenter : MonoBehaviour
     private MainView view;
 
     [SerializeField]
-    private MainModel model;
+    private ResultDialogView dialogView;
 
     [SerializeField]
-    private ResultDialogModel dialogModel;
+    private MainModel model;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        model.Result.Subscribe(async value =>
+        ConfigureView();
+        ConfigureModel();
+    }
+
+    private void ConfigureView()
+    {
+        // Spaceキーを押したとき
+        view.PressSpaceAction += () => model.Reaction();
+
+        // リザルトダイアログのBackボタンを押したとき
+        dialogView.ClickBackButtonAction += async () =>
         {
-            if (value is bool result)
+            await view.PlayButtonClickSound();
+            await view.Fader.FadeOut(1f);
+            model.TransitionToTitleScene();
+        };
+
+        // リザルトダイアログのPlayagainボタンを押したとき
+        dialogView.ClickPlayAgainButtonAction += async () =>
+        {
+            await view.PlayButtonClickSound();
+            await view.Fader.FadeOut(1f);
+            model.PlayAgain();
+        };
+    }
+
+    private void ConfigureModel()
+    {
+        // ゲームの結果が出たとき
+        model.ResultState.Where(s => s != ResultState.None).
+            SubscribeWithState(this, async (s, myself) =>
             {
-                if (result)
+                if (s == ResultState.Success)
                 {
-                    // ゲーム成功
+                    var _ = view.PlaySlashSoundAsync();
+                    view.Slash();
                     await UniTask.Delay(2000);
-                    await view.Fader.FadeOut(1f);
-                    model.ReloadMainScene();
+
+                    if (GameManager.Instance.LevelUp() == GameManager.MaxLevel)
+                    {
+                        // 最大レベルに到達しているのでリザルトダイアログを表示してゲーム終了
+                        view.HideUI();
+                        dialogView.ShowDialog();
+                    }
+                    else
+                    {
+                        // 次のゲームへ
+                        await view.Fader.FadeOut(1f);
+                        model.ReloadScene();
+                    }
                 }
                 else
                 {
-                    // ゲーム失敗
-                    dialogModel.IsActiveDialog.Value = true;
+                    // ゲーム失敗なのでリザルトダイアログを表示してゲーム終了
+                    var _ = view.PlayBeepSoundAsync();
+                    view.HideUI();
+                    dialogView.ShowDialog();
                 }
-            }
-            model.IsStart.Value = false;
-        }).AddTo(this);
+            }).AddTo(this);
 
-        model.IsSlash.Subscribe(value =>
+        // 制限時間の設定
+        model.TimeLimit.SubscribeWithState(this, (value, myself) => myself.view.SetRemainingTimeSlider(minValue: 0, maxValue: value.Ticks, value: value.Ticks)).AddTo(this);
+
+        // 経過時間の設定
+        model.Elapsed.SubscribeWithState(this, (value, myself) => myself.view.SetElapsed(value)).AddTo(this);
+
+        // 残り時間の設定
+        model.RemainingTime.SubscribeWithState(this, (value, myself) => myself.view.SetRemainingTimeSliderValue(value.Ticks)).AddTo(this);
+
+        // ゲーム開始時
+        model.IsStart.Where(value => value).SubscribeWithState(this, (_, myself) =>
         {
-            if (value)
-            {
-                model.Result.Value = (model.TimeLimit.Value - model.Elapsed.Value).Ticks >= 0;
-                model.IsStart.Value = false;
-                view.Slash();
-                //dialogModel.IsActiveDialog.Value = true;
-            }
+            var __ = myself.view.PlayAlarmSoundAsync();
+            myself.view.SetExclamationActive(true);
+            myself.view.SetElapsedTextActive(true);
+            myself.view.SetRemainingTimeSliderActive(true);
         }).AddTo(this);
-
-        model.IsStart.Subscribe(value =>
-        {
-            if (!model.Result.Value.HasValue)
-            {
-                view.SetStartActive(value);
-            }
-        }).AddTo(this);
-        model.Elapsed.Subscribe(value => view.SetElapsedText(value)).AddTo(this);
-
-        model.TimeLimit.Subscribe(value =>
-        {
-            view.SetRemainingTimeSliderRange(0, value.Ticks);
-            view.SetRemainingTimeSliderValue(value.Ticks);
-        }).AddTo(this);
-
-        model.RemainingTime.Subscribe(value =>
-        {
-            view.SetRemainingTimeSliderValue(value.Ticks);
-        }).AddTo(this);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

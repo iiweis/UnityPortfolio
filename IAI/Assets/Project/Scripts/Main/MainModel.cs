@@ -7,18 +7,17 @@ using UniRx.Triggers;
 using UnityRandom = UnityEngine.Random;
 using Cysharp.Threading.Tasks;
 using UnityEngine.SceneManagement;
+using System.Threading.Tasks;
 
 public class MainModel : MonoBehaviour
 {
     private readonly BoolReactiveProperty isStart = new BoolReactiveProperty();
     private readonly ReactiveProperty<TimeSpan> elapsed = new ReactiveProperty<TimeSpan>();
     private readonly ReactiveProperty<TimeSpan> remainingTime = new ReactiveProperty<TimeSpan>();
-    private readonly ReactiveProperty<bool?> result = new ReactiveProperty<bool?>(null);
-    private readonly BoolReactiveProperty isSlash = new BoolReactiveProperty();
+    private readonly ReactiveProperty<ResultState> resultState = new ReactiveProperty<ResultState>(global::ResultState.None);
     private readonly ReactiveProperty<TimeSpan> timeLimit = new ReactiveProperty<TimeSpan>();
 
     private IDisposable intervalOvervable;
-    private Dictionary<int, TimeSpan> timeLimitPerLevel;
 
     /// <summary>
     /// ゲームが開始しているかどうか
@@ -38,12 +37,7 @@ public class MainModel : MonoBehaviour
     /// <summary>
     /// 結果
     /// </summary>
-    public IReactiveProperty<bool?> Result => result;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public IReadOnlyReactiveProperty<bool> IsSlash => isSlash;
+    public IReactiveProperty<ResultState> ResultState => resultState;
 
     /// <summary>
     /// 制限時間
@@ -52,38 +46,26 @@ public class MainModel : MonoBehaviour
 
     private void Start()
     {
-        // レベルごとの制限時間
-        timeLimitPerLevel = new Dictionary<int, TimeSpan>()
-        {
-            { 1, TimeSpan.FromSeconds(3) },
-            { 2, TimeSpan.FromSeconds(2) },
-            { 3, TimeSpan.FromSeconds(1) },
-            { 4, TimeSpan.FromSeconds(0.7) },
-            { 5, TimeSpan.FromSeconds(0.6) },
-            { 6, TimeSpan.FromSeconds(0.5) },
-            { 7, TimeSpan.FromSeconds(0.4) },
-            { 8, TimeSpan.FromSeconds(0.3) },
-            { 9, TimeSpan.FromSeconds(0.2) },
-            { 10, TimeSpan.FromSeconds(0.15) },
-        };
-
         // 5～15秒待機してからゲーム開始
         TimeSpan dueTime = TimeSpan.FromSeconds(5 + UnityRandom.Range(0, 10 + 1));
         Observable.Timer(dueTime).SubscribeWithState(this, (_, myself) =>
         {
-            if (!result.Value.HasValue)
+            if (resultState.Value != global::ResultState.None)
             {
-                // ゲーム開始を通知
-                myself.isStart.Value = true;
+                // 既にゲームが終わっている場合は何もしない
             }
+
+            // ゲーム開始を通知
+            myself.isStart.Value = true;
         }, myself =>
         {
             if (myself.isStart.Value)
             {
                 // ゲーム開始
+                GameManager gameManager = GameManager.Instance;
 
                 // 制限時間設定
-                TimeSpan timeLimit = myself.timeLimitPerLevel[GameManager.Instance.Level];
+                TimeSpan timeLimit = gameManager.GetTimeLimit(gameManager.Level);
                 myself.timeLimit.Value = timeLimit;
                 myself.remainingTime.Value = timeLimit;
 
@@ -91,10 +73,28 @@ public class MainModel : MonoBehaviour
                 myself.intervalOvervable = Observable.TimeInterval(Observable.EveryUpdate()).SubscribeWithState(this, (value, myself) =>
                 {
                     // 経過時間は加算
-                    myself.elapsed.Value += value.Interval;
+                    TimeSpan elapsed = myself.elapsed.Value + value.Interval;
+                    if (elapsed > myself.timeLimit.Value)
+                    {
+                        // 制限時間を超えていたら制限時間に置き換え
+                        elapsed = myself.timeLimit.Value;
+                    }
+                    myself.elapsed.Value = elapsed;
 
                     // 残り時間は減算
-                    myself.remainingTime.Value -= value.Interval;
+                    TimeSpan remainingTime = myself.remainingTime.Value - value.Interval;
+                    if (remainingTime < TimeSpan.Zero)
+                    {
+                        // 0秒を下回っていたら0秒に置き換え
+                        remainingTime = TimeSpan.Zero;
+                    }
+                    myself.remainingTime.Value = remainingTime;
+
+                    // 制限時間切れならゲーム終了
+                    if (remainingTime == TimeSpan.Zero)
+                    {
+                        myself.resultState.Value = global::ResultState.Failure;
+                    }
                 }).AddTo(this);
             }
         }).AddTo(this);
@@ -107,41 +107,57 @@ public class MainModel : MonoBehaviour
                 myself.intervalOvervable?.Dispose();
             }
         }).AddTo(this);
-
-
-        remainingTime.SubscribeWithState(this, (value, myself) =>
-        {
-            if (value.Ticks < 0)
-            {
-                // 制限時間経過でゲーム失敗
-                myself.isStart.Value = false;
-            }
-        }).AddTo(this);
-
-        result.SubscribeWithState(this, async (value, myself) =>
-        {
-            if (value.GetValueOrDefault())
-            {
-                GameManager.Instance.Level += 1;
-            }
-        }).AddTo(this);
     }
 
-    private void Update()
+    /// <summary>
+    /// シーンをリロードする。
+    /// </summary>
+    public void ReloadScene() => SceneManager.LoadScene(SceneNames.Main);
+
+    /// <summary>
+    /// タイトルシーンに遷移する。
+    /// </summary>
+    public void TransitionToTitleScene() => SceneManager.LoadScene(SceneNames.Title);
+
+    /// <summary>
+    /// レベルなどをリセットし、ゲームを初めからプレイし直す。
+    /// </summary>
+    public void PlayAgain()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            if (!isStart.Value || intervalOvervable is null)
-            {
-                // 時間計測が始まっていないときにボタンを押していたら失敗
-                result.Value = false;
-                return;
-            }
-
-            isSlash.Value = true;
-            isSlash.Value = false;
-        }
+        GameManager.Instance.Reset();
+        ReloadScene();
     }
 
-    public void ReloadMainScene() => SceneManager.LoadScene(SceneNames.Main);
+    /// <summary>
+    /// 反応する。
+    /// </summary>
+    public void Reaction()
+    {
+        if (resultState.Value != global::ResultState.None)
+        {
+            // 既にゲーム終了していたら何もしない
+            return;
+        }
+
+        if (intervalOvervable is null)
+        {
+            // 時間計測が始まっていないときにボタンを押していたらゲーム失敗
+            resultState.Value = global::ResultState.Failure;
+            return;
+        }
+
+        // 残り時間より前に反応出来ていたらゲーム成功
+        bool success = remainingTime.Value.Ticks >= 0;
+        if (success)
+        {
+            // ベストタイムを記録する
+            GameManager.Instance.UpdateBestTime(elapsed.Value);
+        }
+
+        // ゲーム結果通知
+        resultState.Value = success ? global::ResultState.Success : global::ResultState.Failure;
+
+        // ゲームは終了したので経過時間計測用のObservableは破棄
+        intervalOvervable?.Dispose();
+    }
 }
