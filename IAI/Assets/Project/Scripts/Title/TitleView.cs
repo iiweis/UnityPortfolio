@@ -33,7 +33,7 @@ public class TitleView : MonoBehaviour
         // Enterキーの押下を監視
         this.UpdateAsObservable().
             Where(_ => Input.GetKeyDown(KeyCode.Return)).
-            Subscribe(_ => OnPressEnter()).
+            SubscribeWithState(this, (_, myself) => myself.OnPressEnter()).
             AddTo(this);
 
         // フェードイン
